@@ -116,7 +116,6 @@ data:
             action: keep
             regex: \d{4}
  
- 
       # Data From cAdvisor
       - job_name: 'kubernetes-cadvisor'
         kubernetes_sd_configs:
