@@ -1,0 +1,133 @@
+apiVersion: rbac.authorization.k8s.io/v1beta1  
+kind: ClusterRole  
+metadata:  
+  name: prometheus  
+rules:  
+- apiGroups: [""]  
+  resources:  
+  - nodes  
+  - services  
+  - endpoints  
+  - pods  
+  verbs: ["get", "list", "watch"]  
+- apiGroups: [""]  
+  resources:  
+  - configmaps  
+  verbs: ["get"]  
+- nonResourceURLs: ["/metrics"]  
+  verbs: ["get"]  
+---  
+apiVersion: v1  
+kind: ServiceAccount  
+metadata:  
+  name: prometheus-k8s  
+  namespace: monitoring  
+---  
+apiVersion: rbac.authorization.k8s.io/v1beta1  
+kind: ClusterRoleBinding  
+metadata:  
+  name: prometheus  
+roleRef:  
+  apiGroup: rbac.authorization.k8s.io  
+  kind: ClusterRole  
+  name: prometheus  
+subjects:  
+- kind: ServiceAccount  
+  name: prometheus-k8s  
+  namespace: monitoring  
+---  
+apiVersion: extensions/v1beta1  
+kind: Deployment  
+metadata:  
+  name: prometheus-core  
+  namespace: monitoring  
+  labels:  
+    app: prometheus  
+    component: core  
+spec:  
+  replicas: 1  
+  template:  
+    metadata:  
+      name: prometheus-main  
+      labels:  
+        app: prometheus  
+        component: core  
+    spec:  
+      serviceAccountName: prometheus-k8s  
+      containers:  
+      - name: prometheus  
+        image: prom/prometheus:v1.7.0  
+        args:  
+          - '-storage.local.retention=12h'  
+          - '-storage.local.memory-chunks=500000'  
+          - '-config.file=/etc/prometheus/prometheus.yaml'  
+          - '-alertmanager.url=http://127.0.0.1:9093/'  
+        ports:  
+        - name: web-ui  
+          containerPort: 9090  
+        resources:  
+          requests:  
+            cpu: 500m  
+            memory: 500M  
+          limits:  
+            cpu: 500m  
+            memory: 500M  
+        volumeMounts:  
+        - name: config-volume  
+          mountPath: /etc/prometheus  
+        - name: rules-volume  
+          mountPath: /etc/prometheus-rules  
+      - image: prom/alertmanager:v0.14.0
+        name: alertmanager
+        args:
+        - "--config.file=/etc/alertmanager/config.yml"
+        - "--storage.path=/alertmanager"
+        ports:
+        - containerPort: 9093
+          protocol: TCP
+          name: http
+        volumeMounts:
+        - name: alertmanager-config-volume
+          mountPath: /etc/alertmanager
+        resources:
+          requests:
+            cpu: 50m
+            memory: 50Mi
+          limits:
+            cpu: 200m
+            memory: 200Mi
+      volumes:  
+      - name: config-volume  
+        configMap:  
+          name: prometheus-core  
+      - name: rules-volume  
+        configMap:  
+          name: prometheus-rules  
+      - name: alertmanager-config-volume
+        configMap:
+          name: prometheus-alertmanager
+---  
+apiVersion: v1  
+kind: Service  
+metadata:  
+  name: prometheus  
+  namespace: monitoring  
+  labels:  
+    app: prometheus  
+    component: core  
+  annotations:  
+    prometheus.io/scrape: 'true'  
+spec:  
+  type: NodePort  
+  ports:  
+    - port: 9090  
+      protocol: TCP  
+      name: core-web-ui  
+      nodePort: 30122  
+    - port: 9093  
+      protocol: TCP  
+      name: alert-web-ui  
+      nodePort: 30123 
+  selector:  
+    app: prometheus  
+    component: core
