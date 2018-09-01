@@ -3,7 +3,7 @@
 
 1.收报警渠道有三个（微信，钉钉，邮件）
 
-#微信
+#微信<br/>
 得申请企业微信号后得到id配置在prometheus_alert_config_map.yaml文件里既可!
 
 #钉钉
