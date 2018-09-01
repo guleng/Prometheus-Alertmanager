@@ -1,0 +1,16 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  namespace: monitoring
+  name: grafana-monitor-ingress
+  annotations:
+    #nginx.org/client_max_body_size: 100m
+    ingress.kubernetes.io/proxy-body-size: 100m
+spec:
+  rules:
+  - host: monitor.com
+    http:
+      paths:
+      - backend:
+          serviceName: grafana-core
+          servicePort: 3000

@@ -1,0 +1,38 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+ namespace: kube-monitor
+ name: prom-pushgateway
+ labels:
+  name: prom-pushgateway
+spec:
+ replicas: 1
+ selector:
+  matchLabels:
+    app: prom-pushgateway
+ strategy:
+   type: Recreate
+ template:
+  metadata:
+   labels:
+    app: prom-pushgateway
+  spec:
+   containers:
+   - name: prom-pushgateway
+     image: harbor.cdd.group/platform/prom-pushgateway:v0.3.1
+     imagePullPolicy: Always
+     resources:
+     ports:
+     - containerPort: 9091
+---
+apiVersion: v1
+kind: Service
+metadata:
+ namespace: kube-monitor
+ name: prom-pushgateway
+spec:
+ ports:
+ - port: 9091
+   targetPort: 9091
+ selector:
+  app: prom-pushgateway

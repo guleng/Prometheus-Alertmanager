@@ -1,0 +1,52 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: prometheus-alertmanager
+  namespace: monitoring
+data:
+  config.yml: |-
+    global:
+      resolve_timeout: 2m
+    route:
+      group_by: ['alertname']
+      #continue: true
+      #group_wait: 1s
+      #group_interval: 1s
+      repeat_interval: 1h
+      #receiver: wechat
+      #receiver: live-monitoring   #下面的匹配的接受项
+      receiver: 'live-monitoring'
+      routes:   #多个报警路径的配置
+      - receiver: 'live-monitoring'
+        continue: true
+        group_by: ['alertname']
+        receiver: 'live-monitoring'       #发邮件渠道报警
+        routes:                                   #多个报警路径的配置
+      - receiver: 'wechat'                  #发微信渠道报警 
+        group_by: ['alertname']
+        continue: true
+      - receiver: 'webhook'      #发钉钉渠道报警
+        group_by: ['alertname']
+        continue: true         #发报警时是否继续匹配
+    receivers:                   #收报警项
+    - name: 'wechat'
+      wechat_configs:
+      - api_secret: 'SHXwaEzy3EfXVnD_GItHaDotkBYxxxxxx'         #企业微信的secret
+        corp_id: 'wx2671a45b9cxxxx'        #企业微信的corp_id，也就是企业id
+        agent_id: '1000003'                           #企业微信的agent_id
+        send_resolved: true                           #是否通知已解决的警报 
+        to_user: 'guleng'                                #报警接受者
+        to_party: '1'                                       #报警接受组
+        to_tag: ''
+    - name: 'live-monitoring'                        #邮件报警项目
+      email_configs:
+      - send_resolved: true
+        smarthost: 'smtp.exmail.qq.com:465'        #邮箱域名
+        from: 'developer@net.cn'           #邮件发件人
+        require_tls: false          
+        auth_username: 'developer@net.cn'     #邮箱用户名
+        auth_password: '101xxxx'                                 #邮箱密码
+        to: 'guleng@net.cn'                            #邮件收件人
+    - name: 'webhook'
+      webhook_configs:                                                    #webhook钉钉收报警
+      - url: 'http://prometheus-webhook-dingtalk:5358/dingtalk/webhook1/send'        #这里是钉钉机器人报警go程序做成pod形式直接调用service名称来调pod
