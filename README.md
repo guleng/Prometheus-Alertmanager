@@ -26,6 +26,7 @@ kubectl label nodes 192.168.10.1  LB=grafana
 所有的访问模式只用了nodePort方式访问，创建完成后请看一下service端口再访问！
 
 
+前置系统说明
 1：主机系统：CentOS Linux release 7.5.1804 (Core)
 2：系统只配置了IP，并且能联网，其他无任何配置
 3：ansible服务器已经和所有节点做了root用户免密码登陆
@@ -35,3 +36,16 @@ kubectl label nodes 192.168.10.1  LB=grafana
 7：在阿里云不能使用阿里云得SLB服务代替keepalived+haproxy，因为阿里云的SLB不支持后端真实服务器既做服务端又做客户端，我研究过阿里云K8S部署脚本，阿里云SLB只做node节点kebelet访问master的负载功能
 8：本ansible一键安装可用于生产环境
 9：同时欢迎大家改进并提交到github,这个我后期一直会维护，由于不太会用github，所以大家有问题也可以先留言
+
+主机名称     	IP	                备注
+node01	192.168.150.181	        master  and etcd
+node02	192.168.150.182	        master  and etcd
+node03	192.168.150.183	        master  and etcd
+node04	192.168.150.184	        node
+slb-179	192.168.150.179       	haproxy+keepalived
+slb-180	192.168.150.180	        haproxy+keepalived
+	    192.168.150.186	            VIP
+
+
+
+2: /etc/ansible/hosts文件解释
